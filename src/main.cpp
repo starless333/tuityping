@@ -6,7 +6,8 @@
 #define BUFFER_SIZE 15
 #define LIMIT 10
 #define WORDS_SIZE 100
-
+#define PENALTY .7f
+// Note: PENALTY is just so that accuracy is emphasized more than speed!.
 // doing this for ease of typing. I know it isn't good practice (see https://github.com/starless333/gentemp !);
 using namespace std;
 
@@ -18,7 +19,7 @@ void zen(void); // zen mode implementation.
 void timer(void); // timer mode implementation.
 void word(void); // word mode implementation.
 void settings(void); // Still contemplating how to implement.
-void stats(int words, float time); // displays those juicy stats.
+void stats(int,float,float); // displays those juicy stats.
 
 // just some stuff that will be needed globally.
 WINDOW *window; // for backspace();
@@ -131,7 +132,7 @@ void zen(){
     if(c != ' ') words++;
 
     clear();
-    stats(words, float(end_time-start_time));
+    stats(words, float(end_time-start_time), 1);
     getch();
 }
 //***********************************************************888*/
@@ -178,6 +179,7 @@ void word(){
     char c;
     bool run = true, get = true;
     clock_t start_time, end_time;
+    bool dont_increment = false;
     while(run) {
         if(i == static_cast<int>(test.size()-1))   {
             end_time = clock();
@@ -190,6 +192,7 @@ void word(){
             case static_cast<char>(127):
             case BS: {
                 backspace();
+                dont_increment = true;
                 break;
             }
             case '`': {
@@ -212,11 +215,21 @@ void word(){
             }
         }
         wrefresh(window);
-        i++;
+        if(!dont_increment) {
+            i++;
+        } else {
+            dont_increment = false;
+            i--;
+            if(i < 0) i = 0;
+        }
     }
 
     clear();
-    stats(10, float(end_time-start_time));
+    if(1-accuracy/i <= .001) {
+        stats(10, float(end_time-start_time),1);
+    }else {
+        stats(10, float(end_time-start_time), accuracy*PENALTY/i);
+    }
     getch();
     return;
 }
@@ -225,7 +238,9 @@ void settings(){
     clear();
 }
 //***********************************************************888*/
-void stats(int words, float time) {
+void stats(int words, float time,float accuracy) {
     printw("WORDS: %d\nTIME: %.2fs\n", words, time/1000.0f);
-    printw("WORDS PER MINUTE: %.2f\n", static_cast<float> (words)/(time/1000.0f)*60);
+    printw("ACCURACY:%.2f\n", accuracy*100);
+    printw("RAW: %.2f\n", static_cast<float> (words)/(time/1000.0f)*60);
+    printw("WORDS PER MINUTE: %.2f\n", static_cast<float> (words)/(time/1000.0f)*60 * accuracy);
 }
