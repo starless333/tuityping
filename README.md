@@ -5,8 +5,8 @@ This application follows the tradition of MonkeyType in the sense that it takes 
 # **Future Plans**
 As of now I simply want to support LocalLeaderBoards. This should be coming soon, but if not feel free to add it, it shouldn't be that bad. I also acknowledge that a lot of the code written could have been condensed, and as I went deeper in the project I began to realize this and hopefully I can coherently revise some of the code, optimize it, and make it a little more readable. Currently the file is a little over 300 lines of code, but honestly I can see it being less than 250. Finally, I would like to add perhaps timed test support, but as of now I will not do that. However as I become more entranced with ncurses I think I will give it a shot. Finally I would love to be able to support quotes and other things like pulling from a database with a bunch of nice lines. That doesn't seem so hard considering it really is just rewriting the word() function and factoring out the initial part of the Reservoir for another process. A lot of this seems feesible but we should just wait and see. 
 # How to Run the Application
-'''bash
+```bash
 git clone --depth 1 https://github.com/starless333/tuityping
 cd tuityping/src/
 make
-'''
+```
