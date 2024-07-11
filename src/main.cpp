@@ -101,8 +101,8 @@ void zen(){
               break;
             }
             case '`': {
-                time(&end_time);
                 run = false;
+                time(&end_time);
                 break;
             }
             default: addch(c);
@@ -139,15 +139,15 @@ void word() {
     int accuracy = 0;
     char c;
     bool run = true, get = true;
-    clock_t start_time, end_time;
+    time_t start_time, end_time;
     bool dont_increment = false;
 
     while(run) {
         c = static_cast<char>(getch());
-        if(get) { start_time = clock(); get = false;}
+        if(get) { time(&start_time); get = false;}
         if(i == static_cast<int>(word.size())-3)   {
-            end_time = clock();
-            break;
+          time(&end_time);
+          break;
         }
         if(c == word[i]) {
           red_green[i] = 'g';
@@ -192,7 +192,7 @@ void word() {
     if(1-i/accuracy <= .001) {
         stats(static_cast<int>(word.size()),10, float(end_time-start_time),1, true);
     }else {
-        stats(static_cast<int>(word.size()),10, float(end_time-start_time),static_cast<float>(i-3)/static_cast<float>(accuracy), true);
+        stats(static_cast<int>(word.size()),10, float(end_time-start_time),static_cast<float>(i-2)/static_cast<float>(accuracy), true);
     }
     char response = static_cast<char>(getch());
     if(response == '1') menu();
@@ -205,20 +205,6 @@ void clearF() {
   getmaxyx(stdscr, row, ccc);
   row/=2;
 }
-
-void print(string text) {
-  int center_col = getmaxx(stdscr)/2;
-  int half_len = static_cast<int>(text.size())/2;
-  int adjusted_col = center_col - half_len;
-  mvwprintw(stdscr,row,adjusted_col, text.c_str());
-  row++;
-}
-
-string f(char c) {
-  string s{c};
-  return s;
-}
-
 // Source: https://ubuntuforums.org/showthread.php?t=1626888
 // big thanks to them for the code!
 void backspace()
@@ -240,8 +226,8 @@ void stats(int len,int w, float time,float accuracy, bool printpp) {
     // to_string may be lesser known than just string so i will append the std::/
     string words_str = "WORDS: " + std::to_string(w) + "\n";
     string accuracy_str = "ACCURACY: " + std::to_string(accuracy*100) + "%\n";
-    string raw_str = "RAW: " + std::to_string(comp/(time)*60) + "\n";
-    string wpm_str = "WPM: " + std::to_string(comp / (time) *60.0f * accuracy) + "\n";
+    string raw_str = "RAW: " + std::to_string(comp*60.0f/(time)) + "\n";
+    string wpm_str = "WPM: " + std::to_string(comp/time *60.0f * accuracy) + "\n";
     if(printpp) {
       stat_print(10,words_str);
       stat_print(12,accuracy_str);
