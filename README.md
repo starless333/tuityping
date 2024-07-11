@@ -10,3 +10,14 @@ git clone --depth 1 https://github.com/starless333/tuityping
 cd tuityping/src/
 make
 ```
+Please note that ncurses is a dependency and this program will not work unless you have it downloaded.
+# **Installing ncurses**
+## **Ubuntu**
+```bash
+sudo apt update
+sudo apt install libncurses5-dev libncursesw5-dev
+```
+## **AUR**
+```bash
+sudo pacman -S ncurses
+```
