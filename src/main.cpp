@@ -1,126 +1,107 @@
 #include<ncurses.h>
 #include<bits/stdc++.h>
 
-
-// const definitions
-#define BUFFER_SIZE 15
-#define LIMIT 10
-#define WORDS_SIZE 100
-#define PENALTY .7f
-// Note: PENALTY is just so that accuracy is emphasized more than speed!.
-// doing this for ease of typing. I know it isn't good practice (see https://github.com/starless333/gentemp !);
 using namespace std;
 
+//function/global variable declarations.
+void menu(void), print(string), zen(void),
+     word(void), clearF(), backspace(),
+     stats(int, int, float, float, bool),
+     print_word_center(string,string),
+     stat_print(int, string); // silly code.
+string f(char);
+vector<string> generate_random(int);
+//f is a function just to help my plebian java brain.
 
-// function definitions;
-void menu(void); // prints the menu.
-void print_centered(const char*); // needs to be fixed admittedly.
-void zen(void); // zen mode implementation.
-void timer(void); // timer mode implementation.
-void word(void); // word mode implementation.
-void settings(void); // Still contemplating how to implement.
-void stats(int,float,float); // displays those juicy stats.
-
-// just some stuff that will be needed globally.
-WINDOW *window; // for backspace();
-const char BS = static_cast<char>(8); // for ease of use.
-int row, col; // for dimensions of terminal if ever needed.
+int row;
+int ROWK, COLK;
+#define BS 8
+#define FILE "../misc/data.dat"
 
 
-
-// Thanks to https://www.espressoenglish.net/the-100-most-common-words-in-english/ for a list of 100 words. May not be accurate.
-vector<string> most_common = {"time", "year", "people", "way", "day", "man", "thing", "woman", "life", "child", "world", "school", "state", "family", "student", "group", "country", "problem", "hand", "part", "place", "case", "week", "company", "system", "program", "question", "work", "government", "number", "night", "point", "home", "water", "room", "mother", "area", "money", "story", "fact", "month", "lot", "right", "study", "book", "eye", "job", "word", "business", "issue", "side", "kind", "head", "house", "service", "friend", "father", "power", "hour", "game", "line", "end", "member", "law", "car", "city", "community", "name", "president", "team", "minute", "idea", "kid", "body", "information", "back", "parent", "face", "others", "level", "office", "door", "health", "person", "art", "war", "history", "party", "result", "change", "morning", "reason", "research", "girl", "guy", "moment", "air", "teacher", "force", "education"};
-
-int main(void)
-{
-    //make sure that prior to calling menu that the screen is clear. ie call clear() prior to menu() call.
-    window = initscr();
-    if(!has_colors()) {
-        cerr << "your terminal does not support colors. If you don't care about the colors simply remove this line in main.cpp.\n";
-        exit(EXIT_FAILURE);
-    }
-    start_color();
-    raw();
-    init_pair(1, COLOR_GREEN, COLOR_BLACK);
-    init_pair(2, COLOR_RED, COLOR_BLACK);
-    cbreak();
-    getmaxyx(stdscr, row, col);
-    menu();
-    endwin();
-
-    return EXIT_SUCCESS;
-}
-
-// Source: https://ubuntuforums.org/showthread.php?t=1626888
-// big thanks to them for the code!
-void backspace()
-{
-  nocbreak();
-  getyx(window, row, col);
-  move(row, col-1);
-  delch();
+int main(void) {
+  srand(static_cast<unsigned int>(time(0)));
+  row = 10;
+  initscr();
+  //keypad mode doesn't allow the backspace function to work because keypad includes backspace as a special key... because it is!
+  noecho();
+  raw();
+  curs_set(0);
+  start_color();
+  init_pair(1, COLOR_GREEN, COLOR_BLACK);
+  init_pair(2, COLOR_RED, COLOR_BLACK);
   cbreak();
-  refresh();
-}
+  getmaxyx(stdscr,ROWK,COLK);
+  menu();
+  //if it is not one of those simply end the window.
 
-void print_centered(const char *text) {
-    int text_length = static_cast<int>(strlen(text));
-    int start_col = (col - text_length) / 2; // Calculate starting column for centered text
-    mvprintw(row / 2, start_col, "%s", text); // Print text centered horizontally
-    refresh(); // Refresh the screen to display changes
+  endwin();
+  return EXIT_SUCCESS;
 }
 
 void menu() {
-    addstr("Welcome to tuityping. Please select a mode you would like:\n");
-    refresh();
-    addstr("\n1. Zen Mode\n2. Timed Test\n3. Word Test\n\n");
-    refresh();
-    char c = static_cast<char>(getch());
-    switch(c) {
-        case '1': {
-            zen();
-            return;
-        }
-        case '2': {
-            timer();
-            return;
-        }
-        case '3': {
-            word();
-            return;
-        }
-        case 'S': {
-            settings();
-        }
-        default: {
-            return;
-        }
-    }
-}
+  clearF();
+  stat_print(10,"Welcome to Tui-Typing!\n");
+  stat_print(12,"1. Zen Mode\n");
+  stat_print(14,"2. Word Mode\n");
+  stat_print(16,"Q. Quit:)  \n");
+  char c = static_cast<char>(getch());
+  if(c == '1') {
+    zen();
+  } else if(c == '2') {
+    word();
+  }
+  //if it is not one of those simply end the window.
 
-// Zen mode is practically fully functioning!;
+
+
+  // print("Is the best Code Geass Character!\n");
+}
+//** ***********************************************************8 */
+
 void zen(){
     clear();
-    addstr("This is zen mode. Type freely and once you press ` your zen stats shall show!\n\n");
-    noecho();
-
+    move(3,6);
     bool get = true;
-    clock_t start_time, end_time;
+    time_t start_time, end_time;
+    scrollok(stdscr,TRUE);
     bool run = true;
     int words = 0;
     char prev = ' ', c;
+    int ctr = 0;
     while(run) {
+        int currR, currY, maxR, maxY;
+        getyx(stdscr, currR, currY);
+        getmaxyx(stdscr, maxR,maxY);
+        if(currY == maxY-7) {
+          if(currR+1 >= maxR) {
+            scroll(stdscr);
+            wmove(stdscr,maxR-1, 6);
+          } else {
+            move(currR+1, 6);
+          }
+        }
         c = static_cast<char>(getch());
-        if(get) { start_time = clock(); get = false;}
-
+        ctr++;
+        if(get) { time(&start_time); get = false;}
         switch(c) {
             case static_cast<char>(127):
             case BS: {
                 backspace();
                 break;
             }
+            case static_cast<char>(10): {
+              if(currR+1 >= maxR) {
+                scroll(stdscr);
+                wmove(stdscr,maxR-1, 6);
+              } else {
+                move(currR+1, 6);
+              }
+
+              break;
+            }
             case '`': {
-                end_time = clock();
+                time(&end_time);
                 run = false;
                 break;
             }
@@ -130,91 +111,72 @@ void zen(){
         prev = c;
     }
     if(c != ' ') words++;
-
+    else words--;
     clear();
-    stats(words, float(end_time-start_time), 1);
-    getch();
+    stats(ctr,words, float(end_time-start_time), 1, false);
+    char response = static_cast<char>( getch() );
+    if(response == '1') menu();
+    return;
 }
+
 //***********************************************************888*/
-void timer() {
-    erase();
-    int secondsLeft = 120;
-    do {
-        printw("%i", secondsLeft);
-        refresh();
-        erase();
-        secondsLeft--;
-        napms(1000);
-    } while (secondsLeft > 0);
-}
-//***********************************************************888*/
-void word(){
-    clear();
-    noecho();
-    random_device rd; // obtain a random number from hardware
-    mt19937 gen(rd()); // seed the generator
-    uniform_int_distribution<> distr(0,WORDS_SIZE-1); // define the range
-    // distr(gen) will produce a random number in that range.
-
-    string test;
-
-
-    for(int i = 0; i < LIMIT; i++ ) {
-        string partial = most_common[distr(gen)] + " ";
-        test.append(partial);
+void word() {
+    clearF();
+    keypad(stdscr, FALSE);
+    // if you wanna change this go right ahead!;
+    int k = 10;
+    vector<string> words = generate_random(k);
+    string word;
+    for(int i = 0; i < k; i++ ) {
+      word.append(words[i]);
+      word.append(" ");
     }
-
-    printw(test.c_str());
-    refresh();
-    addch('\n');
-
-    init_pair(1, COLOR_GREEN, COLOR_BLACK);
-    init_pair(2, COLOR_RED, COLOR_BLACK);  
-
-    //RAW = 10/(time/1000)*60;
-    //WPM = RAW*accuracy/i;
-    //i = test.size() by the end of iteration;
+    string red_green;
+    for(size_t i = 0; i < word.size(); i++ ) red_green.push_back(' ');
+    word.append("\n");
+    print_word_center(word, red_green);
     int i = 0;
     int accuracy = 0;
     char c;
     bool run = true, get = true;
     clock_t start_time, end_time;
     bool dont_increment = false;
+
     while(run) {
-        if(i == static_cast<int>(test.size()-1))   {
+        c = static_cast<char>(getch());
+        if(get) { start_time = clock(); get = false;}
+        if(i == static_cast<int>(word.size())-3)   {
             end_time = clock();
             break;
         }
-        c = static_cast<char>(getch());
-        if(get) { start_time = clock(); get = false;}
+        if(c == word[i]) {
+          red_green[i] = 'g';
+          print_word_center(word, red_green);
+        } else {
+          red_green[i] = 'r';
+          print_word_center(word,red_green);
+        }
 
         switch(c) {
             case static_cast<char>(127):
             case BS: {
                 backspace();
+                if(i != 0) {
+                  red_green[i-1] = ' ';
+                  red_green[i] = ' ';
+                }
                 dont_increment = true;
+                print_word_center(word, red_green);
                 break;
             }
             case '`': {
-                end_time = clock();
-                run = false;
-                break;
+                menu();
+                return;
             }
-            // by default we compare the current character to the
             default: {
-                if(c == test[i]) {
-                    accuracy++;
-                    wattron(window,COLOR_PAIR(1));
-                    waddch(window,c);
-                    wattroff(window,COLOR_PAIR(1));
-                } else {
-                    wattron(window,COLOR_PAIR(2));
-                    waddch(window,c);
-                    wattroff(window,COLOR_PAIR(2));
-                }
             }
         }
-        wrefresh(window);
+        wrefresh(stdscr);
         if(!dont_increment) {
             i++;
         } else {
@@ -222,25 +184,135 @@ void word(){
             i--;
             if(i < 0) i = 0;
         }
+        accuracy++;
     }
-
+    //this is to prevent excessive backspaces that could potentially be marked as quickness!!!
+    if(accuracy < 0) accuracy = 0;
     clear();
-    if(1-accuracy/i <= .001) {
-        stats(10, float(end_time-start_time),1);
+    if(1-i/accuracy <= .001) {
+        stats(static_cast<int>(word.size()),10, float(end_time-start_time),1, true);
     }else {
-        stats(10, float(end_time-start_time), accuracy*PENALTY/i);
+        stats(static_cast<int>(word.size()),10, float(end_time-start_time),static_cast<float>(i-3)/static_cast<float>(accuracy), true);
     }
-    getch();
+    char response = static_cast<char>(getch());
+    if(response == '1') menu();
     return;
 }
-//***********************************************************888*/
-void settings(){
-    clear();
+
+void clearF() {
+  clear();
+  int ccc;
+  getmaxyx(stdscr, row, ccc);
+  row/=2;
 }
+
+void print(string text) {
+  int center_col = getmaxx(stdscr)/2;
+  int half_len = static_cast<int>(text.size())/2;
+  int adjusted_col = center_col - half_len;
+  mvwprintw(stdscr,row,adjusted_col, text.c_str());
+  row++;
+}
+
+string f(char c) {
+  string s{c};
+  return s;
+}
+
+// Source: https://ubuntuforums.org/showthread.php?t=1626888
+// big thanks to them for the code!
+void backspace()
+{
+  nocbreak();
+  getyx(stdscr,ROWK, COLK);
+  move(ROWK,COLK-1);
+  delch();
+  cbreak();
+  refresh();
+}
+
+// REMINDER: YOU NEED TO CHANGE PRINTW into print(); Simply find an equivalent for String.format() for C++.
 //***********************************************************888*/
-void stats(int words, float time,float accuracy) {
-    printw("WORDS: %d\nTIME: %.2fs\n", words, time/1000.0f);
-    printw("ACCURACY:%.2f\n", accuracy*100);
-    printw("RAW: %.2f\n", static_cast<float> (words)/(time/1000.0f)*60);
-    printw("WORDS PER MINUTE: %.2f\n", static_cast<float> (words)/(time/1000.0f)*60 * accuracy);
+void stats(int len,int w, float time,float accuracy, bool printpp) {
+    float comp = static_cast<float>(len)/4.7f;
+    // The way monkeytype calculates is it takes the total number of characters typed (len) and divides by 5 then converts to mins
+    // MonkeyType uses 5 because that is approximately what is the average length of a word. 4.7 (Google) is the average allegedly.
+    // to_string may be lesser known than just string so i will append the std::/
+    string words_str = "WORDS: " + std::to_string(w) + "\n";
+    string accuracy_str = "ACCURACY: " + std::to_string(accuracy*100) + "%\n";
+    string raw_str = "RAW: " + std::to_string(comp/(time)*60) + "\n";
+    string wpm_str = "WPM: " + std::to_string(comp / (time) *60.0f * accuracy) + "\n";
+    if(printpp) {
+      stat_print(10,words_str);
+      stat_print(12,accuracy_str);
+      stat_print(14,raw_str);
+      stat_print(16,wpm_str);
+      stat_print(19,"would you like to do another test? 1 (yes) 2 (no)\n");
+    } else {
+      stat_print(13,wpm_str);
+      stat_print(16,"would you like to do another test? 1 (yes) 2 (no)\n");
+    }
+}
+//** **************************************************************** */
+
+void stat_print(int r,string text) {
+  int center_col = getmaxx(stdscr)/2;
+  int half_len = static_cast<int>(text.size())/2;
+  int adjusted_col = center_col - half_len;
+  mvwprintw(stdscr,r,adjusted_col, text.c_str());
+}
+
+//** **********************************************************888 *//
+// reservoir sampling!
+// more info at : https://en.wikipedia.org/wiki/Reservoir_sampling
+vector<string> generate_random(int k) {
+  ifstream file(FILE);
+  if (!file.is_open()) {
+    throw runtime_error("Unable to open file");
+  }
+  vector<string> reservoir(k);
+  string word;
+  int count = 0;
+  while (count < k && file >> word) {
+    reservoir[count] = word;
+    count++;
+  }
+  int i = k;
+  while (file >> word) {
+    int j = rand() % (i + 1);
+    if (j < k) {
+      reservoir[j] = word;
+    }
+    i++;
+  }
+  file.close();
+  return reservoir;
+}
+
+void print_word_center(string text, const string colors) {
+    int rowR, colR;
+    getmaxyx(stdscr, rowR, colR); // Get the number of rows and columns
+    rowR = 10;
+    int start_col = (colR - static_cast<int>(text.length())) / 2; // Calculate starting column
+
+    // Move to the starting column for centered text
+    int start_row = rowR / 2;
+    mvwprintw(stdscr, start_row, start_col-1, " ");
+
+    // Print each character with appropriate color
+    for (size_t i = 0; i < text.length(); ++i) {
+        if (colors[i] == 'g') {
+            wattron(stdscr, COLOR_PAIR(1));
+            waddch(stdscr, text[i]);
+            wattroff(stdscr, COLOR_PAIR(1));
+        } else if (colors[i] == 'r') {
+            wattron(stdscr, COLOR_PAIR(2));
+            waddch(stdscr, text[i]);
+            wattroff(stdscr, COLOR_PAIR(2));
+        } else {
+            waddch(stdscr, text[i]); // Default color if neither 'g' nor 'r'
+        }
+    }
+
+    wrefresh(stdscr); // Refresh the window to show the text
 }
